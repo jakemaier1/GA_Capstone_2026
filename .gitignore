@@ -1,4 +1,10 @@
-build/
-install/
-log/
 __pycache__/
+devel/
+log/
+logs/
+build/
+bin/
+lib/
+install/
+build_isolated/
+devel_isolated/
