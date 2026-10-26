@@ -8,3 +8,11 @@ lib/
 install/
 build_isolated/
 devel_isolated/
+
+
+*.pyc
+certs*/
+*.key
+*.csr
+*.srl
+.DS_Store
