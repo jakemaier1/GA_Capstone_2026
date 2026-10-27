@@ -6,3 +6,8 @@ General Atomics CPE Capstone Group, working with a YAHBOOM ROSMASTER A1 built ar
 
 `/src`:
 - Where we will put all of our ROS code. If you put a package in this directory which has the same name as a package in the Yahboom workspace, THIS one will be used instead of the Yahboom one. That's because the scripts intentionally source this Repo's files after Yahboom. This will be nice if we wanted to create an augmented version of LineFollowing, for example
+
+## How to Push to Repo
+1. Make code changes in Docker
+2. Add, Commit from Docker in `~/Share` folder
+3. Go back to Nano and Push from there
