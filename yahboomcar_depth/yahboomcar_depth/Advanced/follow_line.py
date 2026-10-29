@@ -174,9 +174,9 @@ class LineDetect(Node):
 				cv.line(rgb_img, self.cols, self.rows, (255, 0, 0), 2)
 				cv.rectangle(rgb_img, self.cols, self.rows, (0, 255, 0), 2)
 				if self.Roi_init[0]!=self.Roi_init[2] and self.Roi_init[1]!=self.Roi_init[3]:
-				    rgb_img, self.hsv_range = self.color.Roi_hsv(rgb_img, self.Roi_init)
-				    self.dyn_update = True
-			else: 
+					rgb_img, self.hsv_range = self.color.Roi_hsv(rgb_img, self.Roi_init)
+					self.dyn_update = True
+			else:
 				self.Track_state = 'init'
 		elif self.Track_state == "identify":
 			#print(self.circle[0])
