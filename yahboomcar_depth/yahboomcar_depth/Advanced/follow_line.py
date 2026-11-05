@@ -193,6 +193,8 @@ class LineDetect(Node):
 				self.Smax  = rclpy.parameter.Parameter('Smax',rclpy.Parameter.Type.INTEGER,self.hsv_range[1][1])
 				self.Vmax  = rclpy.parameter.Parameter('Vmax',rclpy.Parameter.Type.INTEGER,self.hsv_range[1][2])
 
+				self.get_logger().info(f"Hmin: {self.Hmin}, Smin: {self.Smin}, Vmin: {self.Vmin}, Hmax: {self.Hmax}, Smax: {self.Smax}, Vmax: {self.Vmax}")
+
 				all_new_parameters = [self.Hmin,self.Smin,self.Vmin,self.Hmax,self.Smax,self.Vmax]
 				self.set_parameters(all_new_parameters)
 				self.dyn_update = False
