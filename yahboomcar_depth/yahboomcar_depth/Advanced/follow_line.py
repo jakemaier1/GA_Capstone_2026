@@ -52,7 +52,7 @@ class LineDetect(Node):
 		self.dyn_update = False
 		self.Buzzer_state = False
 		self.select_flags = False
-		self.Track_state = 'identify'
+		self.Track_state = 'tracking'
 		self.windows_name = 'frame'
 		self.cols, self.rows = 0, 0
 		self.Mouse_XY = (0, 0)
@@ -73,9 +73,9 @@ class LineDetect(Node):
 		self.Vmin = self.get_parameter('Vmin').get_parameter_value().integer_value
 		self.declare_parameter("Hmax",111)
 		self.Hmax = self.get_parameter('Hmax').get_parameter_value().integer_value
-		self.declare_parameter("Smax",253)
+		self.declare_parameter("Smax",255)
 		self.Smax = self.get_parameter('Smax').get_parameter_value().integer_value
-		self.declare_parameter("Vmax",253)
+		self.declare_parameter("Vmax",255)
 		self.Vmax = self.get_parameter('Vmax').get_parameter_value().integer_value
         #PID
 		self.declare_parameter("Kp",60)
