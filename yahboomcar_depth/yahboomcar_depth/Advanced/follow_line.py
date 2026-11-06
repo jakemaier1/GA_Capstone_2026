@@ -65,13 +65,13 @@ class LineDetect(Node):
 
 	def declare_param(self):
 		#HSV
-		self.declare_parameter("Hmin",0)
+		self.declare_parameter("Hmin",98)
 		self.Hmin = self.get_parameter('Hmin').get_parameter_value().integer_value
-		self.declare_parameter("Smin",85)
+		self.declare_parameter("Smin",120)
 		self.Smin = self.get_parameter('Smin').get_parameter_value().integer_value
-		self.declare_parameter("Vmin",126)
+		self.declare_parameter("Vmin",99)
 		self.Vmin = self.get_parameter('Vmin').get_parameter_value().integer_value
-		self.declare_parameter("Hmax",9)
+		self.declare_parameter("Hmax",111)
 		self.Hmax = self.get_parameter('Hmax').get_parameter_value().integer_value
 		self.declare_parameter("Smax",253)
 		self.Smax = self.get_parameter('Smax').get_parameter_value().integer_value
