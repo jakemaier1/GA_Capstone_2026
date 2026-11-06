@@ -20,6 +20,10 @@ print("cv_edition: ",cv_edition)
 
 DEADBAND_WIDTH_PX = 20
 
+KP = 30
+KI = 0
+KD = 10
+
 class LineDetect(Node):
 	def __init__(self,name):
 		super().__init__(name)
@@ -80,11 +84,11 @@ class LineDetect(Node):
 		self.declare_parameter("Vmax",255)
 		self.Vmax = self.get_parameter('Vmax').get_parameter_value().integer_value
         #PID
-		self.declare_parameter("Kp",60)
+		self.declare_parameter("Kp",KP)
 		self.Kp = self.get_parameter('Kp').get_parameter_value().integer_value
-		self.declare_parameter("Ki",0)
+		self.declare_parameter("Ki",KI)
 		self.Ki = self.get_parameter('Ki').get_parameter_value().integer_value
-		self.declare_parameter("Kd",10)
+		self.declare_parameter("Kd",KD)
 		self.Kd = self.get_parameter('Kd').get_parameter_value().integer_value
 		self.FollowLinePID = (self.Kp,self.Ki,self.Kd)
 		#other
