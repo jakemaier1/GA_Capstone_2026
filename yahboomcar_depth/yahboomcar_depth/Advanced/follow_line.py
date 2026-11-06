@@ -171,11 +171,11 @@ class LineDetect(Node):
 			cv.namedWindow(self.windows_name, cv.WINDOW_AUTOSIZE)
 			cv.setMouseCallback(self.windows_name, self.onMouse, 0)
 			if self.select_flags == True:
-				cv.line(rgb_img, self.cols, self.rows, (255, 0, 0), 2)
-				cv.rectangle(rgb_img, self.cols, self.rows, (0, 255, 0), 2)
 				if self.Roi_init[0]!=self.Roi_init[2] and self.Roi_init[1]!=self.Roi_init[3]:
 					rgb_img, self.hsv_range = self.color.Roi_hsv(rgb_img, self.Roi_init)
 					self.dyn_update = True
+				cv.line(rgb_img, self.cols, self.rows, (255, 0, 0), 2)
+				cv.rectangle(rgb_img, self.cols, self.rows, (0, 255, 0), 2)
 			else:
 				self.Track_state = 'init'
 		elif self.Track_state == "identify":
@@ -193,7 +193,7 @@ class LineDetect(Node):
 				self.Smax  = rclpy.parameter.Parameter('Smax',rclpy.Parameter.Type.INTEGER,self.hsv_range[1][1])
 				self.Vmax  = rclpy.parameter.Parameter('Vmax',rclpy.Parameter.Type.INTEGER,self.hsv_range[1][2])
 
-				self.get_logger().info(f"Hmin: {self.Hmin}, Smin: {self.Smin}, Vmin: {self.Vmin}, Hmax: {self.Hmax}, Smax: {self.Smax}, Vmax: {self.Vmax}")
+				self.get_logger().info(f"Hmin: {self.Hmin.value}, Smin: {self.Smin.value}, Vmin: {self.Vmin.value}, Hmax: {self.Hmax.value}, Smax: {self.Smax.value}, Vmax: {self.Vmax.value}")
 
 				all_new_parameters = [self.Hmin,self.Smin,self.Vmin,self.Hmax,self.Smax,self.Vmax]
 				self.set_parameters(all_new_parameters)
