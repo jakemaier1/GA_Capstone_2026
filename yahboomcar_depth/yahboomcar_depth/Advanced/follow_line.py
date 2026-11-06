@@ -18,6 +18,8 @@ print ("import finish")
 cv_edition = cv.__version__
 print("cv_edition: ",cv_edition)
 
+DEADBAND_WIDTH_PX = 20
+
 class LineDetect(Node):
 	def __init__(self,name):
 		super().__init__(name)
@@ -151,7 +153,7 @@ class LineDetect(Node):
 					for i in range(3): self.pub_Buzzer.publish(b)
 					self.Buzzer_state = False
                 
-				if abs(point_x-320)<40:
+				if abs(point_x-320)<DEADBAND_WIDTH_PX:
 					twist.angular.z=0.0
 				if self.Joy_active == False:
 					self.pub_cmdVel.publish(twist)
