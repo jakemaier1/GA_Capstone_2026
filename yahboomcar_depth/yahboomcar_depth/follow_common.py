@@ -171,26 +171,18 @@ class color_follow:
         Roi=(290,280,350,340)
         :return: The range of images and HSV such as:(0,0,90)(177,40,150) 图像和HSV的范围 例如：(0,0,90)(177,40,150)
         '''
-        H = [];S = [];V = []
-        # img = cv.resize(img, (640, 480), )
-        # 将彩色图转成HSV
         # Convert color image to HSV
         HSV = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-        # 画矩形框
-        # Draw a rectangular frame
-        # cv.rectangle(img, (Roi[0], Roi[1]), (Roi[2], Roi[3]), (0, 255, 0), 2)
-        # 依次取出每行每列的H,S,V值放入容器中
-        # Take out the H, S, V values of each row and each column in turn and put them into the container
-        for i in range(Roi[0], Roi[2]):
-            for j in range(Roi[1], Roi[3]):
-                H.append(HSV[j, i][0])
-                S.append(HSV[j, i][1])
-                V.append(HSV[j, i][2])
-        # 分别计算出H,S,V的最大最小
-        # Calculate the maximum and minimum of H, S, and V respectively
-        H_min = min(H); H_max = max(H)
-        S_min = min(S); S_max = 253
-        V_min = min(V); V_max = 255
+        # Clip the ROI to the image (the mouse can leave the window)
+        y0, y1 = max(Roi[1], 0), min(Roi[3], HSV.shape[0])
+        x0, x1 = max(Roi[0], 0), min(Roi[2], HSV.shape[1])
+        pixels = HSV[y0:y1, x0:x1].reshape(-1, 3)
+        # Use the 2nd/98th percentiles instead of min/max so a few outlier
+        # pixels (glare, background at the box edge) don't widen the range
+        lo, hi = np.percentile(pixels, [2, 98], axis=0, method='nearest')
+        H_min, S_min, V_min = lo
+        H_max = hi[0]
+        S_max = 253; V_max = 255
         # HSV范围调整
         # HSV range adjustment
         if H_max + 5 > 255: H_max = 255
