@@ -18,6 +18,12 @@ print ("import finish")
 cv_edition = cv.__version__
 print("cv_edition: ",cv_edition)
 
+DEADBAND_WIDTH_PX = 20
+
+KP = 30
+KI = 0
+KD = 10
+
 class LineDetect(Node):
 	def __init__(self,name):
 		super().__init__(name)
@@ -52,7 +58,7 @@ class LineDetect(Node):
 		self.dyn_update = False
 		self.Buzzer_state = False
 		self.select_flags = False
-		self.Track_state = 'identify'
+		self.Track_state = 'tracking'
 		self.windows_name = 'frame'
 		self.cols, self.rows = 0, 0
 		self.Mouse_XY = (0, 0)
@@ -65,24 +71,24 @@ class LineDetect(Node):
 
 	def declare_param(self):
 		#HSV
-		self.declare_parameter("Hmin",0)
+		self.declare_parameter("Hmin",98)
 		self.Hmin = self.get_parameter('Hmin').get_parameter_value().integer_value
-		self.declare_parameter("Smin",85)
+		self.declare_parameter("Smin",120)
 		self.Smin = self.get_parameter('Smin').get_parameter_value().integer_value
-		self.declare_parameter("Vmin",126)
+		self.declare_parameter("Vmin",99)
 		self.Vmin = self.get_parameter('Vmin').get_parameter_value().integer_value
-		self.declare_parameter("Hmax",9)
+		self.declare_parameter("Hmax",111)
 		self.Hmax = self.get_parameter('Hmax').get_parameter_value().integer_value
-		self.declare_parameter("Smax",253)
+		self.declare_parameter("Smax",255)
 		self.Smax = self.get_parameter('Smax').get_parameter_value().integer_value
-		self.declare_parameter("Vmax",253)
+		self.declare_parameter("Vmax",255)
 		self.Vmax = self.get_parameter('Vmax').get_parameter_value().integer_value
         #PID
-		self.declare_parameter("Kp",60)
+		self.declare_parameter("Kp",KP)
 		self.Kp = self.get_parameter('Kp').get_parameter_value().integer_value
-		self.declare_parameter("Ki",0)
+		self.declare_parameter("Ki",KI)
 		self.Ki = self.get_parameter('Ki').get_parameter_value().integer_value
-		self.declare_parameter("Kd",10)
+		self.declare_parameter("Kd",KD)
 		self.Kd = self.get_parameter('Kd').get_parameter_value().integer_value
 		self.FollowLinePID = (self.Kp,self.Ki,self.Kd)
 		#other
@@ -151,7 +157,7 @@ class LineDetect(Node):
 					for i in range(3): self.pub_Buzzer.publish(b)
 					self.Buzzer_state = False
                 
-				if abs(point_x-320)<40:
+				if abs(point_x-320)<DEADBAND_WIDTH_PX:
 					twist.angular.z=0.0
 				if self.Joy_active == False:
 					self.pub_cmdVel.publish(twist)

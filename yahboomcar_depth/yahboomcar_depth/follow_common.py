@@ -6,6 +6,10 @@ import numpy as np
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist
 
+# Fraction of the image height (from the top) that is blacked out before line detection.
+# 0.0 = use the whole frame, 0.5 = ignore the top half, 1.0 = ignore everything.
+LINE_FOLLOW_TOP_CROP_FRACTION = 0.0
+
 def write_HSV(wf_path, value):
     with open(wf_path, "w") as wf:
         wf_str = str(value[0][0]) + ', ' + str(
@@ -107,7 +111,7 @@ class color_follow:
     def line_follow(self, rgb_img, hsv_msg):
         height, width = rgb_img.shape[:2]
         img = rgb_img.copy()
-        img[0:int(height / 2), 0:width] = 0
+        img[0:int(height * LINE_FOLLOW_TOP_CROP_FRACTION), 0:width] = 0
         # 将图像转换为HSV。
         # Convert the image to HSV.
         hsv_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
