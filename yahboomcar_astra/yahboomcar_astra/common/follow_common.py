@@ -8,7 +8,7 @@ from geometry_msgs.msg import Twist
 
 # Fraction of the image height (from the top) that is blacked out before line detection.
 # 0.0 = use the whole frame, 0.5 = ignore the top half, 1.0 = ignore everything.
-LINE_FOLLOW_TOP_CROP_FRACTION = 0.0
+LINE_FOLLOW_TOP_CROP_FRACTION = 0.2
 
 def write_HSV(wf_path, value):
     with open(wf_path, "w") as wf:

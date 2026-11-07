@@ -19,10 +19,11 @@ cv_edition = cv.__version__
 print("cv_edition: ",cv_edition)
 
 DEADBAND_WIDTH_PX = 20
+LINEAR_SPEED = 0.38
 
 KP = 80
 KI = 0
-KD = 20
+KD = 8
 
 class LineDetect(Node):
 	def __init__(self,name):
@@ -92,7 +93,7 @@ class LineDetect(Node):
 		self.scale = self.get_parameter('scale').get_parameter_value().integer_value
 		self.declare_parameter("LaserAngle",30)
 		self.LaserAngle = self.get_parameter('LaserAngle').get_parameter_value().integer_value
-		self.declare_parameter("linear",0.45)
+		self.declare_parameter("linear",LINEAR_SPEED)
 		self.linear = self.get_parameter('linear').get_parameter_value().double_value
 		self.declare_parameter("ResponseDist",0.45)
 		self.ResponseDist = self.get_parameter('ResponseDist').get_parameter_value().double_value
