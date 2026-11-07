@@ -21,9 +21,9 @@ print("cv_edition: ",cv_edition)
 DEADBAND_WIDTH_PX = 20
 LINEAR_SPEED = 0.38
 
-KP = 80
+KP = 100
 KI = 0
-KD = 8
+KD = 10
 
 class LineDetect(Node):
 	def __init__(self,name):
