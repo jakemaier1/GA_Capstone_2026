@@ -14,9 +14,23 @@ WS=/root/share/GA_Capstone_2026
 
 running_container() { docker ps -q --filter "ancestor=$IMAGE" | head -n1; }
 
+SESSION=linefollow
+USE_TMUX=0
+if [ -z "$DISPLAY" ]; then   # headless (e.g. plain SSH): use tmux windows instead of GUI terminals
+    command -v tmux >/dev/null || { echo "No DISPLAY and tmux not installed (sudo apt install tmux)" >&2; exit 1; }
+    USE_TMUX=1
+fi
+
 open_term() {  # open_term <title> <command...>
     local title="$1"; shift
-    if command -v gnome-terminal >/dev/null; then gnome-terminal --title="$title" -- "$@"
+    if [ "$USE_TMUX" = 1 ]; then
+        local cmd; cmd=$(printf '%q ' "$@")
+        if tmux has-session -t "$SESSION" 2>/dev/null; then
+            tmux new-window -t "$SESSION" -n "$title" "$cmd"
+        else
+            tmux new-session -d -s "$SESSION" -n "$title" "$cmd"
+        fi
+    elif command -v gnome-terminal >/dev/null; then gnome-terminal --title="$title" -- "$@"
     elif command -v xfce4-terminal >/dev/null; then xfce4-terminal --title="$title" -x "$@"
     elif command -v konsole >/dev/null; then konsole -p "tabtitle=$title" -e "$@"
     elif command -v x-terminal-emulator >/dev/null; then x-terminal-emulator -T "$title" -e "$@"
@@ -46,3 +60,8 @@ run_in_container "camera"      "ros2 launch ascamera hp60c.launch.py"
 run_in_container "lidar"       "ros2 launch yahboomcar_bringup laser_bringup_launch.py"
 sleep "$DELAY"
 run_in_container "line_follow" "ros2 run yahboomcar_depth depth_follow_line"
+
+if [ "$USE_TMUX" = 1 ]; then
+    echo "Launched in tmux session '$SESSION'. Attach with: tmux attach -t $SESSION"
+    echo "Switch windows: Ctrl-b n / Ctrl-b p (or Ctrl-b <number>); detach: Ctrl-b d; stop all: tmux kill-session -t $SESSION"
+fi
