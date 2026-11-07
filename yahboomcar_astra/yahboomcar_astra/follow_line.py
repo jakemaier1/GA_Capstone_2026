@@ -17,6 +17,13 @@ RAD2DEG = 180 / math.pi
 print ("import finish")
 cv_edition = cv.__version__
 print("cv_edition: ",cv_edition)
+
+DEADBAND_WIDTH_PX = 20
+
+KP = 80
+KI = 0
+KD = 20
+
 class LineDetect(Node):
 	def __init__(self,name):
 		super().__init__(name)
@@ -73,11 +80,11 @@ class LineDetect(Node):
 		self.declare_parameter("Vmax",253)
 		self.Vmax = self.get_parameter('Vmax').get_parameter_value().integer_value
         #PID
-		self.declare_parameter("Kp",80)
+		self.declare_parameter("Kp",KP)
 		self.Kp = self.get_parameter('Kp').get_parameter_value().integer_value
-		self.declare_parameter("Ki",0)
+		self.declare_parameter("Ki",KI)
 		self.Ki = self.get_parameter('Ki').get_parameter_value().integer_value
-		self.declare_parameter("Kd",20)
+		self.declare_parameter("Kd",KD)
 		self.Kd = self.get_parameter('Kd').get_parameter_value().integer_value
 		self.FollowLinePID = (self.Kp,self.Ki,self.Kd)
 		#other
@@ -154,7 +161,7 @@ class LineDetect(Node):
 					for i in range(3): self.pub_Buzzer.publish(b)
 					self.Buzzer_state = False
                 
-				if abs(point_x-320)<40:
+				if abs(point_x-320)<DEADBAND_WIDTH_PX:
 					twist.angular.z=0.0
 				if self.Joy_active == False:
 					self.pub_cmdVel.publish(twist)
