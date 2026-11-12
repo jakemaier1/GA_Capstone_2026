@@ -3,15 +3,23 @@ import rclpy
 from rclpy.node import Node
 import math
 
+from enum import Enum, auto
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String, Int32
+
+class State(Enum):
+    READY = auto()
+    DRIVE = auto()
+    STOP = auto()
+
 
 class NavNode():
     def __init__(self):
         super().__init__("nav_node")
 
-        self.instructions = []
-        self.direction = ""
+        self.instructions = [A, ]
+        self.options = []
+        self.available_signs = []
         self.instruction_timer_period = 0.6 #some arbitrary timing
         self.vision_timer_period = 0.6
 
@@ -22,11 +30,16 @@ class NavNode():
             10
         )
 
-        self.sub_to_vision = self.create_subscription(
+        self.sub_to_CV = self.create_subscription(
             String,
             "ANOTHA TOPIC",
-            self.direction,
+            self.available_signs,
             10
+        )
+
+        self.sub_to_line_follow = self.create_subscription(
+            String,
+            ""
         )
 
         self.line_follow_instructions = self.create_publisher(
@@ -36,10 +49,19 @@ class NavNode():
             10
             )
 
-        self.instruction_timer = self.create_timer(self.instruction_timer_period, self.instruction_callback)
-        self.vision_timer = self.create_timer(self.vision_timer_period, self.vision_callback)
+        # self.instruction_timer = self.create_timer(self.instruction_timer_period, self.instruction_callback)
+        # self.vision_timer = self.create_timer(self.vision_timer_period, self.vision_callback)
 
-    def instruction_callback(self, ):
+    def BDT(self, available_signs, instructions):
+        #Check for stop first
+        if("STOP" in available_signs){
+            #figure out stop logic here
+        }
 
-    def vision_callback(self, ):
+        #start BDT
+        if( instructions[0] in available_signs){
+            
+        }
+
+    def FSM(self, ):
 
