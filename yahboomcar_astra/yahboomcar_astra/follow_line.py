@@ -18,12 +18,12 @@ print ("import finish")
 cv_edition = cv.__version__
 print("cv_edition: ",cv_edition)
 
-DEADBAND_WIDTH_PX = 20
+DEADBAND_WIDTH_PX = 0
 LINEAR_SPEED = 0.38
 
-KP = 100
+KP = 90
 KI = 0
-KD = 10
+KD = 12
 
 class LineDetect(Node):
 	def __init__(self,name):
