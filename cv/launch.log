@@ -1,0 +1,19 @@
+1793308519.5996189 [INFO] [launch]: All log files can be found below /root/.ros/log/2026-10-29-14-15-19-596408-yahboom-389
+1793308519.6001413 [INFO] [launch]: Default logging verbosity is set to INFO
+1793308519.9930091 [INFO] [ascamera_node-1]: process started with pid [416]
+1793308520.5374401 [ascamera_node-1] [INFO] [1793308520.536657910] [ascamera_hp60c.camera_publisher]: get depth_width 640
+1793308520.5396006 [ascamera_node-1] [INFO] [1793308520.538958005] [ascamera_hp60c.camera_publisher]: get depth_height 480
+1793308520.5410872 [ascamera_node-1] [INFO] [1793308520.540599338] [ascamera_hp60c.camera_publisher]: get rgb_width 640
+1793308520.5425382 [ascamera_node-1] [INFO] [1793308520.542018010] [ascamera_hp60c.camera_publisher]: get rgb_height 480
+1793308520.5443842 [ascamera_node-1] [INFO] [1793308520.543542570] [ascamera_hp60c.camera_publisher]: get set_fps 25
+1793308520.5483301 [ascamera_node-1] [INFO] [1793308520.546734088] [ascamera_hp60c.camera_publisher]: get pub_tfTree 1
+1793308520.5487919 [ascamera_node-1] [INFO] [1793308520.546820548] [ascamera_hp60c.camera_publisher]: hello world angstrong camera ros2 node
+1793308520.5581348 [ascamera_node-1] [INFO] [1793308520.557124490] [ascamera_hp60c.camera_publisher]: 2026-10-29 14:15:20[INFO] [CameraSrv.cpp] [35] [CameraSrv] Angstrong camera server
+1793308520.5588100 [ascamera_node-1] [INFO] [1793308520.557281993] [ascamera_hp60c.camera_publisher]: 2026-10-29 14:15:20[INFO] [CameraSrv.cpp] [45] [CameraSrv] Angstrong camera sdk version:v1.2.28.20241021
+1793308652.4071884 [WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+1793308652.4134049 [ascamera_node-1] [INFO] [1793308652.406667913] [rclcpp]: signal_handler(signum=2)
+1793308654.0126481 [ascamera_node-1] [INFO] [1793308654.011915587] [ascamera_hp60c.camera_publisher]: 2026-10-29 14:17:34[INFO] [CameraSrv.cpp] [78] [stop] stop listener monitor
+1793308654.0138021 [ascamera_node-1] [INFO] [1793308654.011962879] [ascamera_hp60c.camera_publisher]: 2026-10-29 14:17:34[INFO] [CameraSrv.cpp] [81] [stop] stop and close the camera
+1793308654.0152421 [ascamera_node-1] [INFO] [1793308654.012000588] [ascamera_hp60c.camera_publisher]: 2026-10-29 14:17:34[INFO] [CameraSrv.cpp] [52] [~CameraSrv] Angstrong camera server exit
+1793308654.0170085 [ascamera_node-1] [INFO] [1793308654.012012620] [ascamera_hp60c.camera_publisher]: angstrong camera ros2 node shutdown
+1793308654.1936097 [INFO] [ascamera_node-1]: process has finished cleanly [pid 416]
