@@ -206,8 +206,3 @@ def main():
 	finally:
 		linedetect.cancel()
 		linedetect.destroy_node()
-
-	
-	
-	
-
