@@ -3,12 +3,26 @@
 import time
 import cv2 as cv
 import numpy as np
+from typing import NamedTuple
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist
+
+class LineCentroid(NamedTuple):
+  center: int
+  width: int
 
 # Fraction of the image height (from the top) that is blacked out before line detection.
 # 0.0 = use the whole frame, 0.5 = ignore the top half, 1.0 = ignore everything.
 LINE_FOLLOW_TOP_CROP_FRACTION = 0.2
+# Fractions of the image height (from the top) at which a 1D row of pixels is sampled
+# from the binary image.
+# DETECT row: farther from the camera; used to spot upcoming turn options (forks/intersections).
+DETECT_LINE_SAMPLE_ROW_FRACTION = 0.4
+# ACT row: closer to the camera; used for the line we actually steer on (low latency).
+ACT_LINE_SAMPLE_ROW_FRACTION = 0.7
+# blobs of this size and larger are considered significant
+GAP_THRESH = 4
+LINE_THRESH = 4
 
 def write_HSV(wf_path, value):
     with open(wf_path, "w") as wf:
@@ -31,57 +45,46 @@ def read_HSV(rf_path):
     return hsv
 
 
-# 定义函数，第一个参数是缩放比例，第二个参数是需要显示的图片组成的元组或者列表
 # Define the function, the first parameter is the zoom ratio, and the second parameter is a tuple or list of pictures to be displayed
 def ManyImgs(scale, imgarray):
-    rows = len(imgarray)  # 元组或者列表的长度  Length of tuple or list
-    cols = len(imgarray[0])  # 如果imgarray是列表，返回列表里第一幅图像的通道数，如果是元组，返回元组里包含的第一个列表的长度
+    rows = len(imgarray)  # Length of tuple or list
+    cols = len(imgarray[0])
     # If imgarray is a list, return the number of channels of the first image in the list, if it is a tuple, return the length of the first list contained in the tuple
 
     # print("rows=", rows, "cols=", cols)
-    # 判断imgarray[0]的类型是否是list
-    # 是list，表明imgarray是一个元组，需要垂直显示
     # Determine whether the type of imgarray[0] is list
     # It is a list, indicating that imgarray is a tuple and needs to be displayed verticallyIt is a list, indicating that imgarray is a tuple and needs to be displayed vertically
     rowsAvailable = isinstance(imgarray[0], list)
-    # 第一张图片的宽高
     # The width and height of the first picture
     width = imgarray[0][0].shape[1]
     height = imgarray[0][0].shape[0]
     # print("width=", width, "height=", height)
-    # 如果传入的是一个元组
     # If the incoming is a tuple
     if rowsAvailable:
         for x in range(0, rows):
             for y in range(0, cols):
-                # 遍历元组，如果是第一幅图像，不做变换
                 # Traverse the tuple, if it is the first image, do not transform
                 if imgarray[x][y].shape[:2] == imgarray[0][0].shape[:2]:
                     imgarray[x][y] = cv.resize(imgarray[x][y], (0, 0), None, scale, scale)
-                # 将其他矩阵变换为与第一幅图像相同大小，缩放比例为scale
                 # Transform other matrices to the same size as the first image, and the zoom ratio is scale
                 else:
                     imgarray[x][y] = cv.resize(imgarray[x][y], (imgarray[0][0].shape[1], imgarray[0][0].shape[0]), None,
                                                scale, scale)
-                # 如果图像是灰度图，将其转换成彩色显示
                 # If the image is grayscale, convert it to color display
                 if len(imgarray[x][y].shape) == 2:
                     imgarray[x][y] = cv.cvtColor(imgarray[x][y], cv.COLOR_GRAY2BGR)
-        # 创建一个空白画布，与第一张图片大小相同
         # Create a blank canvas, the same size as the first picture
         imgBlank = np.zeros((height, width, 3), np.uint8)
-        hor = [imgBlank] * rows  # 与第一张图片大小相同，与元组包含列表数相同的水平空白图像
+        hor = [imgBlank] * rows
         # The same size as the first picture, and the same number of horizontal blank images as the tuple contains the list
         for x in range(0, rows):
             # 将元组里第x个列表水平排列
             # Arrange the x-th list in the tuple horizontally
             hor[x] = np.hstack(imgarray[x])
-        ver = np.vstack(hor)  # 将不同列表垂直拼接
+        ver = np.vstack(hor)
         # Concatenate different lists vertically
-    # 如果传入的是一个列表
     # If the incoming is a list
     else:
-        # 变换操作，与前面相同
         # Transformation operation, same as before
         for x in range(0, rows):
             if imgarray[x].shape[:2] == imgarray[0].shape[:2]:
@@ -90,7 +93,6 @@ def ManyImgs(scale, imgarray):
                 imgarray[x] = cv.resize(imgarray[x], (imgarray[0].shape[1], imgarray[0].shape[0]), None, scale, scale)
             if len(imgarray[x].shape) == 2:
                 imgarray[x] = cv.cvtColor(imgarray[x], cv.COLOR_GRAY2BGR)
-        # 将列表水平排列
         # Arrange the list horizontally
         hor = np.hstack(imgarray)
         ver = hor
@@ -100,13 +102,46 @@ def ManyImgs(scale, imgarray):
 class color_follow:
     def __init__(self):
         '''
-        初始化一些参数
 	    Initialize some parameters
         '''
         self.binary = None
         self.Center_x = 0
         self.Center_y = 0
         self.Center_r = 0
+        self.detect_lines = []
+        self.act_lines = []
+
+    def detect_diverged_lines(self, px_arr):
+        arr = np.array(px_arr)
+        arr[arr > 0] = 1
+        pad_arr = np.pad(arr, 1)
+        diff_arr = np.diff(pad_arr)
+        transitionIndices = np.flatnonzero(diff_arr)
+        # start and stop indices of LINES, not GAPS
+        startIdxs = transitionIndices[0::2]
+        stopIdxs = transitionIndices[1::2]
+
+        # REMOVE INSIGNIFICANT GAPS
+        # iterate in reverse to avoid indexing issues when deleting from arr
+        for i in range(len(startIdxs) - 2, -1, -1):
+            gap_len = startIdxs[i+1] - stopIdxs[i]
+            # remove insignificant gaps
+            if gap_len < GAP_THRESH:
+                startIdxs = np.delete(startIdxs, i+1)
+                stopIdxs = np.delete(stopIdxs, i)
+
+        # REMOVE INSIGNIFICANT LINES
+        for i in range(len(startIdxs) - 1, -1, -1):
+            line_len = stopIdxs[i] - startIdxs[i]
+            if line_len < LINE_THRESH:
+                startIdxs = np.delete(startIdxs, i)
+                stopIdxs = np.delete(stopIdxs, i)
+        lines = []
+        for i in range(len(startIdxs)):
+            width = stopIdxs[i] - startIdxs[i]
+            center = (width // 2) + startIdxs[i]
+            lines.append(LineCentroid(int(center), int(width)))
+        return lines
 
     def line_follow(self, rgb_img, hsv_msg):
         height, width = rgb_img.shape[:2]
@@ -127,6 +162,11 @@ class color_follow:
         gray_img = cv.morphologyEx(gray_img, cv.MORPH_CLOSE, kernel)
         # Image binarization operation
         ret, binary = cv.threshold(gray_img, 10, 255, cv.THRESH_BINARY)
+        # Sample two 1D horizontal rows of the binary image and detect the lines in each
+        detect_y = int(height * DETECT_LINE_SAMPLE_ROW_FRACTION)
+        act_y = int(height * ACT_LINE_SAMPLE_ROW_FRACTION)
+        self.detect_lines = self.detect_diverged_lines(binary[detect_y])
+        self.act_lines = self.detect_diverged_lines(binary[act_y])
         # Get the set of contour points (coordinates)
         find_contours = cv.findContours(binary, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         if len(find_contours) == 3: contours = find_contours[1]
@@ -137,13 +177,10 @@ class color_follow:
             max_id = areas.index(max(areas))
             max_rect = cv.minAreaRect(contours[max_id])
             max_box = cv.boxPoints(max_rect)
+            # Convert box vertices to integer pixel coordinates
             max_box = np.int0(max_box)
-            # Get box vertices
-            box = cv.boxPoints(max_rect)
-            # Convert to long type
-            box = np.int0(box)
             # Draw the smallest rectangle
-            cv.drawContours(rgb_img, [box], 0, (255, 0, 0), 2)
+            cv.drawContours(rgb_img, [max_box], 0, (255, 0, 0), 2)
             (color_x, color_y), color_radius = cv.minEnclosingCircle(max_box)
             # Mark the detected color with the original shape coil
             self.Center_x = int(color_x)
@@ -154,7 +191,7 @@ class color_follow:
             self.Center_x = 0
             self.Center_y = 0
             self.Center_r = 0
-        return rgb_img, binary, (self.Center_x, self.Center_y, self.Center_r)
+        return rgb_img, binary, (self.Center_x, self.Center_y, self.Center_r), self.detect_lines, self.act_lines
 
     def Roi_hsv(self, img, Roi):
         '''

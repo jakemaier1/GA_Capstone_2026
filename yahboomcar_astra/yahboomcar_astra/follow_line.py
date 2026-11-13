@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
 #common lib
 import os
 from yahboomcar_astra.common.follow_common import *
@@ -17,6 +18,7 @@ class LineDetect(Node):
 		super().__init__(name)
 		#create a publisher
 		self.pub_cmdVel = self.create_publisher(Twist,"/cmd_vel",1)
+		self.pub_turnOptions = self.create_publisher(String,"/turn_options", 10)
 		self.circle = ()
 		self.hsv_range = ()
 		self.Roi_init = ()
@@ -128,7 +130,10 @@ class LineDetect(Node):
 		if self.Track_state == 'init' and self.is_dragging == True:
 			rgb_img = self.select_color_roi(rgb_img)
 		if self.Track_state != 'init' and len(self.hsv_range) != 0:
-			rgb_img, binary, self.circle = self.color.line_follow(rgb_img, self.hsv_range)
+			rgb_img, binary, self.circle, detect_lines, act_lines = self.color.line_follow(rgb_img, self.hsv_range)
+			msg = String()
+			msg.data = f"Detected lines: {detect_lines} | Acting on lines: {act_lines}"
+			self.pub_turnOptions.publish(msg)
 			if self.new_color_selected:
 				self.save_color_params()
 		if self.Track_state == 'tracking':
