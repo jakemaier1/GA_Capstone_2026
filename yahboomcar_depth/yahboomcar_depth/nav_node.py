@@ -6,62 +6,114 @@ import math
 from enum import Enum, auto
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String, Int32
-
-class State(Enum):
-    READY = auto()
-    DRIVE = auto()
-    STOP = auto()
+from std_msgs.msg import StringArray
+from dataclasses import dataclass
 
 
-class NavNode():
+@dataclass
+class Sign:
+    sign_type: str
+    sign_label: str
+    sign_direction: str
+
+    @classmethod
+    def from_string(cls, name_string):
+        sign_type, sign_label, sign_direction = (
+            name_string.lower().split("_", 2)
+        )
+
+        return cls(
+            sign_type=sign_type,
+            sign_label=sign_label,
+            sign_direction=sign_direction
+        )
+
+
+class NavNode(Node):
     def __init__(self):
         super().__init__("nav_node")
 
-        self.instructions = [A, ]
+        self.instructions = []
         self.options = []
         self.available_signs = []
-        self.instruction_timer_period = 0.6 #some arbitrary timing
-        self.vision_timer_period = 0.6
+        self.next_sign = None
+
 
         self.sub_to_tower = self.create_subscription(
-            String,
-            'THE TOPIC WE CHOOSE',
-            self.instructions,
+            StringArray,
+            'InstructionTopic',
+            self.tower_callback,
             10
         )
 
         self.sub_to_CV = self.create_subscription(
-            String,
+            StringArray,
             "ANOTHA TOPIC",
-            self.available_signs,
+            self.CV_callback,
             10
         )
 
         self.sub_to_line_follow = self.create_subscription(
-            String,
-            ""
+            StringArray,
+            "/turn_options",
+            self.line_follow_callback,
+            10
         )
 
         self.line_follow_instructions = self.create_publisher(
             String,
             'DIRECTION TOPIC',
-            self.direction,
             10
             )
 
-        # self.instruction_timer = self.create_timer(self.instruction_timer_period, self.instruction_callback)
-        # self.vision_timer = self.create_timer(self.vision_timer_period, self.vision_callback)
+        self.create_timer(0.1, self.BDT)  #timer to make FSM run this often
 
-    def BDT(self, available_signs, instructions):
-        #Check for stop first
-        if("STOP" in available_signs){
-            #figure out stop logic here
-        }
+      
+    #This is literally to grab the instructions from the tower and put them into a global var
+    def tower_callback(self, msg):
+        self.instructions_raw = list(msg.data) #list() is used so that this file has a separate copy to change however
+        self.instructions = [Sign.from_string(instruction) for instruction in self.instructions_raw]
+        self.next_sign = self.instructions[0]
 
-        #start BDT
-        if( instructions[0] in available_signs){
+    def CV_callback(self, msg):
+        self.available_signs = list(msg.data)
+
+    def line_follow_callback(self, msg):
+        self.options = list(msg.data)
+
+    def BDT(self):
+        direction_msg = String()
+
+        if not self.instructions:
+            return
+
+        available_sign_objects = [Sign.from_string(sign) for sign in self.available_signs]
+        available_turn_options = [option.lower() for option in self.options]
             
-        }
+        #TODO: Implement stop logic after we design stopping signs etc
 
-    def FSM(self, ):
+        target_sign_is_visible = False
 
+        for available_sign in available_sign_objects:
+            if (available_sign.sign_type == self.next_sign.sign_type
+                    and available_sign.sign_label == self.next_sign.sign_label):
+                target_sign_is_visible = True
+                break 
+
+        if not target_sign_is_visible:
+            direction_msg.data = "straight"
+
+        elif self.next_sign.sign_direction in available_turn_options:
+            direction_msg.data = self.next_sign.sign_direction
+            self.instructions.pop(0)
+            if self.instructions:
+                self.next_sign = self.instructions[0]
+            else:
+                self.next_sign = None
+
+        else:
+            direction_msg.data = "straight"
+
+        self.line_follow_instructions.publish(direction_msg)
+
+                
