@@ -16,3 +16,16 @@ certs*/
 *.csr
 *.srl
 .DS_Store
+
+# Private cryptographic keys
+*.key
+*.key.pem
+**/key.pem
+
+# Generated SROS2 credentials if placed in this repository
+sros2_runtime/
+rover_application_keystore/
+rover_security_test*/
+
+# Local secrets
+.env
