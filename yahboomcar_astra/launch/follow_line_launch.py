@@ -8,11 +8,11 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    # Base driver for the A1 car (subscribes to /cmd_vel and drives the motors).
+    # Our local copy of the A1 car bringup (base driver, IMU, EKF, joystick, ...).
     bringup_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                get_package_share_directory('yahboomcar_bringup'),
+                get_package_share_directory('yahboomcar_astra'),
                 'launch', 'yahboomcar_bringup_A1_launch.py')
         )
     )
