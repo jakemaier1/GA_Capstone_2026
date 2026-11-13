@@ -112,28 +112,21 @@ class color_follow:
         height, width = rgb_img.shape[:2]
         img = rgb_img.copy()
         img[0:int(height * LINE_FOLLOW_TOP_CROP_FRACTION), 0:width] = 0
-        # 将图像转换为HSV。
         # Convert the image to HSV.
         hsv_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         lower = np.array(hsv_msg[0], dtype="uint8")
         upper = np.array(hsv_msg[1], dtype="uint8")
-        # 根据特定颜色范围创建mask
         # Create a mask based on a specific color range
         mask = cv.inRange(hsv_img, lower, upper)
         color_mask = cv.bitwise_and(hsv_img, hsv_img, mask=mask)
-        # 将图像转为灰度图
         # Convert the image to grayscale
         gray_img = cv.cvtColor(color_mask, cv.COLOR_RGB2GRAY)
-        # 获取不同形状的结构元素
         # Get structure elements of different shapes
         kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
-        # 形态学闭操作
         # Morphological closed operation
         gray_img = cv.morphologyEx(gray_img, cv.MORPH_CLOSE, kernel)
-        # 图像二值化操作
         # Image binarization operation
         ret, binary = cv.threshold(gray_img, 10, 255, cv.THRESH_BINARY)
-        # 获取轮廓点集(坐标)
         # Get the set of contour points (coordinates)
         find_contours = cv.findContours(binary, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         if len(find_contours) == 3: contours = find_contours[1]
@@ -145,17 +138,13 @@ class color_follow:
             max_rect = cv.minAreaRect(contours[max_id])
             max_box = cv.boxPoints(max_rect)
             max_box = np.int0(max_box)
-            # 获取盒⼦顶点
             # Get box vertices
             box = cv.boxPoints(max_rect)
-            # 转成long类型
             # Convert to long type
             box = np.int0(box)
-            # 绘制最小矩形
             # Draw the smallest rectangle
             cv.drawContours(rgb_img, [box], 0, (255, 0, 0), 2)
             (color_x, color_y), color_radius = cv.minEnclosingCircle(max_box)
-            # 将检测到的颜色用原形线圈标记出来
             # Mark the detected color with the original shape coil
             self.Center_x = int(color_x)
             self.Center_y = int(color_y)

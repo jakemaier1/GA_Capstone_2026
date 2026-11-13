@@ -4,7 +4,6 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 #common lib
 import os
-import threading
 from yahboomcar_astra.common.follow_common import *
 
 LINEAR_SPEED = 0.38
@@ -22,13 +21,12 @@ class LineDetect(Node):
 		self.hsv_range = ()
 		self.Roi_init = ()
 		self.end = 0
-		self.dyn_update = False
-		self.select_flags = False
-		self.Track_state = 'identify'
+		self.new_color_selected = False
+		self.is_dragging = False
+		self.Track_state = 'init'
 		self.windows_name = 'frame'
 		self.cols, self.rows = 0, 0
 		self.Mouse_XY = (0, 0)
-		self.hsv_text = "/root/yahboomcar_ros2_ws/yahboomcar_ws/src/yahboomcar_astra/yahboomcar_astra/colorfollowHSV.text"
 		self.color = color_follow()
 
 		self.declare_param()
@@ -36,7 +34,10 @@ class LineDetect(Node):
 		
 		self.capture = cv.VideoCapture(0)
 		self.capture.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc(*'MJPG'))
-		self.timer = self.create_timer(0.011, self.on_timer)	
+		self.timer = self.create_timer(0.011, self.on_timer)
+
+		cv.namedWindow(self.windows_name, cv.WINDOW_AUTOSIZE)
+		cv.setMouseCallback(self.windows_name, self.onMouse, 0)	
 
 	def declare_param(self):
 		#HSV
@@ -78,15 +79,32 @@ class LineDetect(Node):
 	def onMouse(self, event, x, y, flags, param):
 		if event == 1:
 			self.Track_state = 'init'
-			self.select_flags = True
+			self.is_dragging = True
 			self.Mouse_XY = (x,y)
 		if event == 4:
-			self.select_flags = False
+			self.is_dragging = False
 			self.Track_state = 'mouse'
-		if self.select_flags == True:
+		if self.is_dragging == True:
 			self.cols = min(self.Mouse_XY[0], x), min(self.Mouse_XY[1], y)
 			self.rows = max(self.Mouse_XY[0], x), max(self.Mouse_XY[1], y)
 			self.Roi_init = (self.cols[0], self.cols[1], self.rows[0], self.rows[1])
+
+	def select_color_roi(self, rgb_img):
+		cv.line(rgb_img, self.cols, self.rows, (255, 0, 0), 2)
+		cv.rectangle(rgb_img, self.cols, self.rows, (0, 255, 0), 2)
+		if self.Roi_init[0]!=self.Roi_init[2] and self.Roi_init[1]!=self.Roi_init[3]:
+			rgb_img, self.hsv_range = self.color.Roi_hsv(rgb_img, self.Roi_init)
+			self.new_color_selected = True
+		return rgb_img
+
+	def save_color_params(self):
+		P, T = rclpy.parameter.Parameter, rclpy.Parameter.Type.INTEGER
+		low, high = self.hsv_range
+		self.set_parameters([
+			P('Hmin', T, low[0]), P('Smin', T, low[1]), P('Vmin', T, low[2]),
+			P('Hmax', T, high[0]), P('Smax', T, high[1]), P('Vmax', T, high[2]),
+		])
+		self.new_color_selected = False
 
 	def execute(self, point_x, color_radius):
 		if color_radius == 0:
@@ -105,41 +123,17 @@ class LineDetect(Node):
 		rgb_img = cv.resize(rgb_img, (640, 480))
         
 		if action == 32: self.Track_state = 'tracking'
-		elif action == ord('i') or action == 105: self.Track_state = "identify"
-		elif action == ord('r') or action == 114: self.Reset()
-		elif action == ord('q') or action == 113: self.cancel()
-		if self.Track_state == 'init':
-			cv.namedWindow(self.windows_name, cv.WINDOW_AUTOSIZE)
-			cv.setMouseCallback(self.windows_name, self.onMouse, 0)
-			if self.select_flags == True:
-				cv.line(rgb_img, self.cols, self.rows, (255, 0, 0), 2)
-				cv.rectangle(rgb_img, self.cols, self.rows, (0, 255, 0), 2)
-				if self.Roi_init[0]!=self.Roi_init[2] and self.Roi_init[1]!=self.Roi_init[3]:
-					rgb_img, self.hsv_range = self.color.Roi_hsv(rgb_img, self.Roi_init)
-					self.dyn_update = True
-			else: 
-				self.Track_state = 'init'
-		elif self.Track_state == "identify":
-			if os.path.exists(self.hsv_text): self.hsv_range = read_HSV(self.hsv_text)
-			else: self.Track_state = 'init'
+		elif action == ord('r'): self.Reset()
+		elif action == ord('q'): self.cancel()
+		if self.Track_state == 'init' and self.is_dragging == True:
+			rgb_img = self.select_color_roi(rgb_img)
 		if self.Track_state != 'init' and len(self.hsv_range) != 0:
 			rgb_img, binary, self.circle = self.color.line_follow(rgb_img, self.hsv_range)
-			if self.dyn_update == True:
-				write_HSV(self.hsv_text, self.hsv_range)
-				self.Hmin  = rclpy.parameter.Parameter('Hmin',rclpy.Parameter.Type.INTEGER,self.hsv_range[0][0])
-				self.Smin  = rclpy.parameter.Parameter('Smin',rclpy.Parameter.Type.INTEGER,self.hsv_range[0][1])
-				self.Vmin  = rclpy.parameter.Parameter('Vmin',rclpy.Parameter.Type.INTEGER,self.hsv_range[0][2])
-				self.Hmax  = rclpy.parameter.Parameter('Hmax',rclpy.Parameter.Type.INTEGER,self.hsv_range[1][0])
-				self.Smax  = rclpy.parameter.Parameter('Smax',rclpy.Parameter.Type.INTEGER,self.hsv_range[1][1])
-				self.Vmax  = rclpy.parameter.Parameter('Vmax',rclpy.Parameter.Type.INTEGER,self.hsv_range[1][2])
-
-				
-				all_new_parameters = [self.Hmin,self.Smin,self.Vmin,self.Hmax,self.Smax,self.Vmax]
-				self.set_parameters(all_new_parameters)
-				self.dyn_update = False
+			if self.new_color_selected:
+				self.save_color_params()
 		if self.Track_state == 'tracking':
 			if len(self.circle) != 0:
-				threading.Thread(target=self.execute, args=(self.circle[0], self.circle[2])).start()
+				self.execute(self.circle[0], self.circle[2])
 		return rgb_img, binary
 
 
@@ -155,7 +149,7 @@ class LineDetect(Node):
 		cv.putText(frame, text, (30, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (100, 200, 200), 1)
 		if len(binary) != 0: cv.imshow('frame', ManyImgs(1, ([frame, binary])))
 		else:cv.imshow('frame', frame)
-		if action == ord('q') or action == 113:
+		if action == ord('q'):
 			self.capture.release()
 			cv.destroyAllWindows()
 
